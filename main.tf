@@ -38,7 +38,7 @@ resource "aws_subnet" "priv_az2" {
 
 
   tags = {
-    Name = "private subnet for AZ2-commit"
+    Name = "private subnet for AZ2-commit-test"
   }
 }
 
