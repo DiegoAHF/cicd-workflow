@@ -65,6 +65,7 @@ jobs:
   apply:
     name: Infrastructure Apply
     needs: approval                           # Runs only after approval
+    environment: test
     runs-on: ubuntu-latest
     
     steps:
