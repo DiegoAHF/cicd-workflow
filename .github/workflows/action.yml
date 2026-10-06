@@ -32,7 +32,7 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # 5. Format check (Ensures code conforms to standard formatting)
+      # 5. Format check 
       - name: Terraform Format Check
         run: terraform validate
 
@@ -41,6 +41,7 @@ jobs:
         id: plan
         run: terraform plan -out=tfplan
 
+      # 7. Uploads the terrafom plan output as an artifact so it can then be reused after approval
       - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -48,11 +49,15 @@ jobs:
           path: tfplan
 
   approval:
+    name: "Manual approval"
     needs: planning
     runs-on: ubuntu-latest
     permissions:
       issues: write
+      
     steps:
+
+      # 1. Wait for approval before applying the changes to the infrastructure
       - name: Wait for manual approval
         uses: trstringer/manual-approval@v1.10.0
         with:
@@ -60,11 +65,11 @@ jobs:
           approvers: DiegoAHF
           minimum-approvals: 1
           issue-title: "Approve Terraform Apply"
-          issue-body: "Do you approve to apply the changes? Please respond with 'approved' to continue."
+          issue-body: "Do you approve to apply the changes described in the plan output? Please respond with 'approved' to continue."
           
   apply:
     name: Infrastructure Apply
-    needs: approval                           # Runs only after approval
+    needs: approval                           
     environment: test
     runs-on: ubuntu-latest
     
@@ -73,7 +78,8 @@ jobs:
     # 1. Checkout repository code
       - name: Checkout Code
         uses: actions/checkout@v4
-
+        
+    # 2. Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -81,31 +87,38 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2 # Change to your AWS region
           
+    # 3. Setup Terraform CLI     
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.12.2"
-
+          
+    # 4. Initialize Terraform working directory
       - name: Terraform Init
         run: terraform init
-
+        
+    # 5. Downloads tfplan output to apply changes 
       - name: Download Plan Artifact
         uses: actions/download-artifact@v4
         with:
           name: tfplan
-
+          
+    # 6. Apply the changes to the infrastructure
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan 
 
   automerge:
-    name: Enable Auto-Merge
+    name: Auto-Merge to main
     needs: apply
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     if: github.event_name == 'pull_request'
+    
     steps:
+
+    # 1. Once the changes have been applied to the infrastructure, the files are merged to the main branch
       - name: Enable Auto-Merge via GitHub CLI
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
