@@ -1,5 +1,3 @@
-#This Terraform configuration file creates a VPC with two public and two private subnets across two availability zones. 
-#It also provisions two EC2 instances, one in each private subnet.
 
 #VPC level Configuration
 resource "aws_vpc" "lab" {
@@ -38,7 +36,7 @@ resource "aws_subnet" "priv_az2" {
 
 
   tags = {
-    Name = "private subnet for AZ2-commit-testing"
+    Name = "private subnet for AZ2"
   }
 }
 
@@ -49,7 +47,7 @@ resource "aws_subnet" "pub_az2" {
 
 
   tags = {
-    Name = "public subnet for AZ2-git-commit"
+    Name = "public subnet for AZ2"
   }
 }
 
