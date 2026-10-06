@@ -47,7 +47,7 @@ resource "aws_subnet" "pub_az2" {
 
 
   tags = {
-    Name = "public subnet for AZ2-"
+    Name = "public subnet for AZ2"
   }
 }
 
