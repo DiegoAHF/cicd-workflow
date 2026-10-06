@@ -96,3 +96,19 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan 
+
+  automerge:
+    name: Enable Auto-Merge
+    needs: apply
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Enable Auto-Merge via GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr merge "$PR_URL" --auto --squash
