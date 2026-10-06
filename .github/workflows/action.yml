@@ -1,0 +1,97 @@
+name: "Terraform Plan on PR"
+
+on: 
+  pull_request:
+    types: [ opened ]
+
+jobs:
+  planning:
+    name: "Infrastructure Plan"
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repository code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2 # Change to your AWS region
+
+      # 3. Setup Terraform CLI
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2" # Set to match your local Terraform version
+
+      # 4. Initialize Terraform working directory
+      - name: Terraform Init
+        run: terraform init
+
+      # 5. Format check (Ensures code conforms to standard formatting)
+      - name: Terraform Format Check
+        run: terraform validate
+
+      # 6. Run Terraform Plan
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out=tfplan
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
+
+  approval:
+    needs: planning
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Wait for manual approval
+        uses: trstringer/manual-approval@v1.10.0
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: DiegoAHF
+          minimum-approvals: 1
+          issue-title: "Approve Terraform Apply"
+          issue-body: "Do you approve to apply the changes? Please respond with 'approved' to continue."
+          
+  apply:
+    name: Infrastructure Apply
+    needs: approval                           # Runs only after approval
+    runs-on: ubuntu-latest
+    
+    steps:
+
+    # 1. Checkout repository code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2 # Change to your AWS region
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan 
