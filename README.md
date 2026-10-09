@@ -19,17 +19,18 @@ The workflow consists of four sequential, interdependent jobs that are triggered
 4. Auto-Merge to main: Once the infrastructure changes are successfully applied, the PR request is automatically merged to the main branch by using GitHub's CLI (gh pr merge --auto --squash) command, ensuring that it accurately reflects active infrastructure state.
 
 💼 Business & Organizational Impact
-Implementing this pipeline addresses key infrastructure management challenges commonly faced by engineering teams:
+
+This pipeline's implementation addresses key infrastructure management challenges commonly faced by engineering teams:
 
 1. Elimination of Unintended Production Outages
 Problem: Direct execution of unreviewed Terraform applies can lead to accidental resource deletion or service downtime.
 
 Solution: The explicit separation of Plan and Apply behind a mandatory Approval gate guarantees that every structural modification is peer-reviewed prior to deployment.
 
-2. Prevention of Execution Drift & Race Conditions
-Problem: Differences between developer local environments or modifications made between planning and applying can introduce state file drift or lock mismatches.
+2. Prevention of Execution Drift
+Problem: Differences between local environments or modifications made between planning and applying can introduce state file drift or lock mismatches.
 
-Solution: Persisting the tfplan and .terraform.lock.hcl files across runner instances guarantees deterministic execution: the exact state calculated during the planning phase is what gets deployed.
+Solution: Persisting the tfplan file across runner instances guarantees deterministic execution, that means the exact state calculated during the planning phase is what gets deployed.
 
 3. Accelerated Delivery & Operational Velocity
 Problem: Manual review processes combined with manual branch merging slow down deployment cycles and create git branch divergence.
