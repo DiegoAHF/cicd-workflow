@@ -8,33 +8,15 @@ This repository implements a team-oriented GitHub Actions pipeline for provision
 🏗️ Pipeline Architecture
 The workflow consists of four sequential, interdependent jobs that are triggered automatically on every pull_request event:
 
-[ Infrastructure Plan ] ──> [ Manual Approval ] ──> [ Infrastructure Apply ] ──> [ Enable Auto-Merge ]
+[ Infrastructure Plan ] ──> [ Manual approval ] ──> [ Infrastructure Apply ] ──> [ Auto-Merge to main ]
 
-1. Infrastructure Plan (Infrastructure Plan)
-Purpose: Validates syntax and generates an execution plan without modifying production infrastructure.
+1. Infrastructure Plan: This phase validates syntax and generates an execution plan without modifying production infrastructure. By running the commands terraform init and terraform plan -out=tfplan, the binary execution plan from Terraform is exported and uploaded as a workflow Artifact (tfplan) so it can be reused to apply the changes later on.
 
-Mechanism: Runs terraform init and terraform plan -out=tfplan.
+2. Manual Approval: It enforces human oversight and peer review prior to infrastructure modification. I used an issue/comment-based manual gate polling (trstringer/manual-approval) that generates a GitHub issue that asks to the required reviewer if the execution plan (tfplan) is approved or not. Only when the user comments "approved", this phase is successfully passed and the workflow continues on to the next stage; if the changes are not approved, the workflow run fails to continue and the changes are not applied.
 
-Artifact Management: Uploads both the binary execution plan (tfplan) and dependency lock file (.terraform.lock.hcl) as workflow artifacts to ensure consistency across ephemeral runner environments.
+3. Infrastructure Apply: Once the changes are approved, the execution plan uploaded in phase 1 is now downloaded and the corresponding AWS credentials are used to deploy the cloud infrastructure changes safely.
 
-2. Manual Approval Gate (approval)
-Purpose: Enforces human oversight and peer review prior to infrastructure modification.
-
-Mechanism: Utilizes issue/comment-based manual gate polling (trstringer/manual-approval).
-
-Governance: Halts pipeline execution until designated engineers review the proposed changes and comment approved.
-
-3. Infrastructure Apply (Infrastructure Apply)
-Purpose: Safely provisions cloud resource changes.
-
-Mechanism: Downloads the exact tfplan and .terraform.lock.hcl artifacts uploaded during the planning phase and executes terraform apply -auto-approve tfplan.
-
-Safety: Guarantees that only the precise, peer-reviewed plan is executed, preventing drift or concurrency races.
-
-4. Automated Merging (Enable Auto-Merge)
-Purpose: Eliminates manual git overhead and ensures the primary branch accurately reflects active infrastructure state.
-
-Mechanism: Leverages GitHub's CLI (gh pr merge --auto --squash) to merge the Pull Request into main automatically after deployment confirmation.
+4. Auto-Merge to main: Once the infrastructure changes are successfully applied, the PR request is automatically merged to the main branch by using GitHub's CLI (gh pr merge --auto --squash) command, ensuring that it accurately reflects active infrastructure state.
 
 💼 Business & Organizational Impact
 Implementing this pipeline addresses key infrastructure management challenges commonly faced by engineering teams:
