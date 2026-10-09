@@ -1,4 +1,4 @@
-Automated Terraform Infrastructure Pipeline (CI/CD)
+Automated AWS Infrastructure Deployment Pipeline
 
 📌 Overview
 In modern cloud environments, every infrastructure change must be carefully planned, reviewed, and explicitly approved before being applied to production. Unchecked deployments or direct manual modifications can lead to unintended downtime, security vulnerabilities, and state corruption.
