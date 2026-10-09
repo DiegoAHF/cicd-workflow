@@ -1,6 +1,7 @@
 Automated AWS Infrastructure Deployment Pipeline
 
 📌 Overview
+
 In modern cloud environments, every infrastructure change must be carefully planned, reviewed, and explicitly approved before being applied to production. Unchecked deployments or direct manual modifications can lead to unintended downtime, security vulnerabilities, and state corruption.
 
 This repository implements a team-oriented GitHub Actions pipeline for provisioning AWS cloud infrastructure with Terraform. By combining automated validation, temporary artifact storage, explicit human approval gates, and zero-trust secret management, this pipeline ensures that no infrastructure change reaches production without proper peer oversight.
@@ -8,6 +9,7 @@ This repository implements a team-oriented GitHub Actions pipeline for provision
 🔐 Security & Secret Management: AWS access keys (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) are never stored in the source code or workflow files, so the authentication to AWS is handled securely by injecting credentials stored in GitHub Repository Secrets into the workflow execution environment at runtime.
 
 🏗️ Pipeline Architecture
+
 The workflow consists of four sequential, interdependent jobs that are triggered automatically on every pull_request event:
 
 [ Infrastructure Plan ] ──> [ Manual approval ] ──> [ Infrastructure Apply ] ──> [ Auto-Merge to main ]
