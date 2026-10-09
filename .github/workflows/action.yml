@@ -1,4 +1,4 @@
-name: "Terraform Plan on PR"
+name: "Cloud Infrastructure deployment process on PR"
 
 on: 
   pull_request:
@@ -32,8 +32,8 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # 5. Format check 
-      - name: Terraform Format Check
+      # 5. Syntax check 
+      - name: Terraform syntax Check
         run: terraform validate
 
       # 6. Run Terraform Plan
@@ -70,7 +70,7 @@ jobs:
   apply:
     name: Infrastructure Apply
     needs: approval                           
-    environment: test
+    environment: test          #The infrastructure gets deployed to the test environment
     runs-on: ubuntu-latest
     
     steps:
