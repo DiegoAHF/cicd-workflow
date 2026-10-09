@@ -5,6 +5,8 @@ In modern cloud environments, every infrastructure change must be carefully plan
 
 This repository implements a team-oriented GitHub Actions pipeline for provisioning AWS cloud infrastructure with Terraform. By combining automated validation, temporary artifact storage, explicit human approval gates, and zero-trust secret management, this pipeline ensures that no infrastructure change reaches production without proper peer oversight.
 
+🔐 Security & Secret Management: AWS access keys (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) are never stored in the source code or workflow files, so the authentication to AWS is handled securely by injecting credentials stored in GitHub Repository Secrets into the workflow execution environment at runtime.
+
 🏗️ Pipeline Architecture
 The workflow consists of four sequential, interdependent jobs that are triggered automatically on every pull_request event:
 
@@ -17,6 +19,35 @@ The workflow consists of four sequential, interdependent jobs that are triggered
 3. Infrastructure Apply: Once the changes are approved, the execution plan uploaded in phase 1 is now downloaded and the corresponding AWS credentials are used to deploy the cloud infrastructure changes safely.
 
 4. Auto-Merge to main: Once the infrastructure changes are successfully applied, the PR request is automatically merged to the main branch by using GitHub's CLI (gh pr merge --auto --squash) command, ensuring that it accurately reflects active infrastructure state.
+
+🛠️ Problems faced & Key Architectural fixes
+
+During the development and testing of this pipeline, several technical bottlenecks and runner execution challenges were encountered and resolved, here is the summary:
+
+1. Ephemeral Runner File Loss & Execution Plan Mismatch
+Problem: Subsequent jobs in GitHub Actions execute on fresh, isolated virtual machines. Running terraform apply on a separate runner failed or attempted to regenerate plans due to missing .tf configuration files and tfplan binaries.
+
+Fix: Configured actions/checkout@v4 across planning and applying jobs to guarantee repository file consistency. Additionally, configured actions/upload-artifact@v4 and actions/download-artifact@v4 to pass the execution plan (tfplan) seamlessly between the Plan and Apply runner environments.
+
+2. Exposure Risk of AWS Cloud Credentials
+Problem: Hardcoding authentication credentials in workflow files introduces critical security risks and compliance violations.
+
+Fix: Centralized AWS authentication using GitHub Encrypted Secrets (secrets.AWS_ACCESS_KEY_ID and secrets.AWS_SECRET_ACCESS_KEY). These are injected into environment variables only at job execution, enforcing zero-trust security standards.
+
+3. Local vs. remote Terraform Version Mismatches
+Problem: Discrepancies between the Terraform version used locally and the version running on GitHub runner images led to state file incompatibility and syntax parse errors.
+
+Fix: Enforced exact version parity across all runner environments by pinning the CLI version in hashicorp/setup-terraform@v3 to match local development environments.
+
+4. Unreviewed / Direct Infrastructure Deployments
+Problem: Continuous integration pipelines that auto-apply changes on push risk deploying destructive modifications or unintended resource deletions without peer review.
+
+Fix: Introduced an explicit manual approval gate (trstringer/manual-approval) between the Plan and Apply jobs. The pipeline now pauses execution and waits for an authorized user to review the generated plan before proceeding.
+
+5. Stale Branches & Manual Branch Merge Friction
+Problem: Requiring to manually merge Pull Requests after deployment creates branch drift between main and active cloud infrastructure, delaying delivery cycles.
+
+Fix: Integrated GitHub CLI (gh pr merge --auto --squash) into the final pipeline job (Auto-Merge to main). Once terraform apply succeeds, the PR automatically merges into main, keeping the default branch fully synchronized with active infrastructure.
 
 💼 Business & Organizational Impact
 
@@ -41,3 +72,5 @@ Solution: Once approval is granted and the deployment succeeds, the PR automatic
 Problem: Tracking who approved and deployed specific infrastructure modifications can be difficult for compliance audits.
 
 Solution: Native GitHub Action logs, PR comments, and audit trails capture every plan output, reviewer approval, and deployment status automatically.
+
+
