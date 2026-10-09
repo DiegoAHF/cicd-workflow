@@ -1,10 +1,15 @@
 Automated Terraform Infrastructure Pipeline (CI/CD)
-This repository contains an automated GitHub Actions CI/CD pipeline designed for provisioning and managing cloud infrastructure using Terraform. The workflow automates continuous integration, manual peer-review gates, state/lock consistency, and automated Pull Request merging upon deployment verification.
+
+📌 Overview
+In modern cloud environments, every infrastructure change must be carefully planned, reviewed, and explicitly approved before being applied to production. Unchecked deployments or direct manual modifications can lead to unintended downtime, security vulnerabilities, and state corruption.
+
+This repository implements a team-oriented GitHub Actions pipeline for provisioning AWS cloud infrastructure with Terraform. By combining automated validation, temporary artifact storage, explicit human approval gates, and zero-trust secret management, this pipeline ensures that no infrastructure change reaches production without proper peer oversight.
 
 🏗️ Pipeline Architecture
-The workflow consists of four sequential, interdependent jobs triggered automatically on every pull_request event:
+The workflow consists of four sequential, interdependent jobs that are triggered automatically on every pull_request event:
 
-[ Infrastructure Plan ] ──> [ approval ] ──> [ Infrastructure Apply ] ──> [ Enable Auto-Merge ]
+[ Infrastructure Plan ] ──> [ Manual Approval ] ──> [ Infrastructure Apply ] ──> [ Enable Auto-Merge ]
+
 1. Infrastructure Plan (Infrastructure Plan)
 Purpose: Validates syntax and generates an execution plan without modifying production infrastructure.
 
